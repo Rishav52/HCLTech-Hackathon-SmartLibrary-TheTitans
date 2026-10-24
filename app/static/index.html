@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Library Assistant</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#1b2430; --muted:#5d6b7d; --line:#dde2e8; --accent:#1f5fbf; --accent-ink:#fff;
+  --ok:#17794a; --ok-bg:#e5f5ec; --warn:#8a5a00; --warn-bg:#fff2d6; --bad:#a3262a; --bad-bg:#fde8e8; --chip:#eef2f7; --user:#e8f0fc;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --panel:#1a212a; --ink:#e6ebf1; --muted:#9aa8b8; --line:#2c3642; --accent:#6aa3f0; --accent-ink:#0b1420;
+  --ok:#5fd09a; --ok-bg:#16322573; --warn:#f0c15f; --warn-bg:#3a2e12; --bad:#ff8a8d; --bad-bg:#3b1c1e; --chip:#232d38; --user:#1f3350;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:17px;margin:0;font-weight:650;flex:1 1 auto}
+label{font-size:13px;color:var(--muted)}
+select,button,input{font:inherit;color:inherit}
+select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%}
+.role{font-size:12px;border-radius:999px;padding:2px 9px;background:var(--chip);color:var(--muted);text-transform:capitalize}
+nav{display:flex;gap:4px;padding:8px 16px 0;max-width:980px;margin:0 auto}
+nav button{border:1px solid var(--line);border-bottom:none;background:transparent;padding:7px 14px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted)}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--ink);font-weight:600}
+nav button:disabled{opacity:.45;cursor:not-allowed}
+main{max-width:980px;margin:0 auto;padding:0 16px 24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:14px}
+#log{min-height:320px;max-height:58vh;overflow:auto;display:flex;flex-direction:column;gap:12px;padding:2px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px;border:1px solid var(--line);overflow-wrap:anywhere}
+.msg.user{align-self:flex-end;background:var(--user);border-color:transparent}
+.msg.bot{align-self:flex-start;background:var(--panel)}
+.msg p{margin:0 0 6px;white-space:pre-wrap}.msg p:last-child{margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12px;background:var(--chip);color:var(--muted);border-radius:6px;padding:2px 8px}
+.chip a{color:var(--accent)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.warn{background:var(--warn-bg);color:var(--warn)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.confirm{display:flex;gap:8px;margin-top:8px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.suggest{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.suggest .btn{font-size:13px;padding:4px 10px;border-radius:999px;color:var(--muted)}
+form{display:flex;gap:8px;margin-top:6px}
+input[type=text]{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-size:22px;line-height:1.2}.kpi span{font-size:12px;color:var(--muted)}
+h2{font-size:15px;margin:18px 0 6px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px}
+.scroll{overflow-x:auto}
+.note{font-size:12.5px;color:var(--muted)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:110px;padding-top:6px}
+.bar{flex:1;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+.bar span{position:absolute;top:-17px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+.bl{display:flex;gap:6px}.bl div{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+footer{max-width:980px;margin:0 auto;padding:0 16px 20px;font-size:12px;color:var(--muted)}
+.hidden{display:none}
+@media (max-width:560px){.msg{max-width:96%}header{padding:10px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Smart Library Assistant</h1>
+  <label for="persona">Signed in as</label>
+  <select id="persona" aria-label="Demo user"></select>
+  <span class="role" id="role">anonymous</span>
+</header>
+<nav role="tablist">
+  <button role="tab" id="tab-chat" aria-selected="true" aria-controls="view-chat">Assistant</button>
+  <button role="tab" id="tab-dash" aria-selected="false" aria-controls="view-dash" disabled title="Librarians only">Librarian dashboard</button>
+</nav>
+<main>
+  <section class="panel" id="view-chat" role="tabpanel">
+    <div id="log" role="log" aria-live="polite" aria-label="Conversation"></div>
+    <div class="suggest" id="suggest" aria-label="Suggested questions"></div>
+    <form id="form" autocomplete="off">
+      <input type="text" id="msg" aria-label="Message" placeholder="Ask about books, availability, your loans, or recommendations…" maxlength="2000">
+      <button class="btn primary" type="submit" id="send">Send</button>
+    </form>
+  </section>
+  <section class="panel hidden" id="view-dash" role="tabpanel" aria-live="polite"></section>
+</main>
+<footer id="foot"></footer>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const state = {email: "", sessionId: null, role: "anonymous", busy: false};
+
+const PROMPTS = {
+  anonymous: ["Find books on Python programming", "Is Artificial Intelligence: A Modern Approach available?",
+              "Find Quantum Basket Weaving for Beginners", "What items have I borrowed?"],
+  member: ["Recommend beginner resources for learning generative AI that are currently available",
+           "Find an available beginner book on Python and reserve it", "Which borrowed books are due this week?",
+           "Suggest resources for my Data Science semester", "Find papers related to retrieval-augmented generation",
+           "Show me Diya's borrowed books"],
+  librarian: ["Which titles have the longest waitlists?", "What are the catalog gaps?", "What should we acquire?",
+              "Show me overdue trends", "Which titles are underused?", "Give me the library dashboard"],
+};
+
+/* ---- safe rendering: build DOM nodes, never innerHTML with untrusted text ---- */
+function el(tag, props = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) k === "class" ? (n.className = v) : n.setAttribute(k, v);
+  for (const c of kids) n.append(c);
+  return n;
+}
+function richText(text) {                       // **bold** only; everything else is plain text
+  const frag = document.createDocumentFragment();
+  text.split("\n").forEach((line, i, all) => {
+    const p = el("p");
+    line.split(/(\*\*[^*]+\*\*)/g).forEach((part) =>
+      p.append(/^\*\*[^*]+\*\*$/.test(part) ? el("strong", {}, part.slice(2, -2)) : document.createTextNode(part)));
+    if (line.trim() || i < all.length - 1) frag.append(p);
+  });
+  return frag;
+}
+const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : null);
+
+async function api(path, opts = {}) {
+  const headers = {"Content-Type": "application/json", ...(state.email ? {"X-User-Email": state.email} : {})};
+  const r = await fetch(path, {...opts, headers});
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+/* ---- chat ---- */
+function addUser(text) {
+  $("log").append(el("div", {class: "msg user"}, el("p", {}, text)));
+  scroll();
+}
+function scroll() { const l = $("log"); l.scrollTop = l.scrollHeight; }
+
+function addBot(r) {
+  const box = el("div", {class: "msg bot"});
+  box.append(richText(r.answer));
+  const meta = el("div", {class: "meta"});
+  (r.citations || []).forEach((c) => {
+    const url = safeUrl(c.access_url);
+    meta.append(el("span", {class: "chip"}, "Source: ", url ? el("a", {href: url, target: "_blank", rel: "noopener noreferrer"}, c.title) : c.title,
+                   c.source ? ` · ${c.source.replace(/_/g, " ")}` : ""));
+  });
+  (r.tools || []).forEach((t) => meta.append(el("span", {class: "chip" + (["ok"].includes(t.status) ? "" : " warn"),
+      title: "Audit trace id: " + (t.trace_id || "none")}, `${t.tool} · ${t.status}${t.trace_id ? " · " + t.trace_id : ""}`)));
+  meta.append(el("span", {class: "chip " + (r.grounded ? "ok" : "bad")}, r.grounded ? "grounded in tool results" : "answer replaced: not verifiable"));
+  if (r.pending_action) meta.append(el("span", {class: "chip warn"}, `awaiting your confirmation: ${r.pending_action.tool}`));
+  if (r.degraded) meta.append(el("span", {class: "chip warn"}, "LLM unavailable: offline fallback used"));
+  (r.security_flags || []).forEach((f) => meta.append(el("span", {class: "chip bad"}, `security: ${f.type.replace(/_/g, " ")}`)));
+  box.append(meta);
+  if (r.pending_confirmation) {
+    const row = el("div", {class: "confirm"});
+    const yes = el("button", {class: "btn primary", type: "button"}, "Yes, confirm");
+    const no = el("button", {class: "btn", type: "button"}, "No, cancel");
+    const done = () => row.remove();
+    yes.onclick = () => { done(); send("yes"); };
+    no.onclick = () => { done(); send("no"); };
+    row.append(yes, no);
+    box.append(row);
+    setTimeout(() => yes.focus(), 0);
+  }
+  $("log").append(box);
+  scroll();
+}
+
+async function send(text) {
+  text = (text || "").trim();
+  if (!text || state.busy) return;
+  state.busy = true; $("send").disabled = true;
+  addUser(text);
+  const wait = el("div", {class: "msg bot"}, el("p", {class: "note"}, "Working…"));
+  $("log").append(wait); scroll();
+  try {
+    const r = await api("/chat", {method: "POST", body: JSON.stringify({message: text, session_id: state.sessionId})});
+    state.sessionId = r.session_id;
+    wait.remove(); addBot(r);
+  } catch (e) {
+    wait.remove();
+    $("log").append(el("div", {class: "msg bot"}, el("p", {}, "Sorry, something went wrong (" + e.message + ").")));
+  } finally {
+    state.busy = false; $("send").disabled = false;
+    if (document.activeElement === document.body) $("msg").focus();
+  }
+}
+
+function renderSuggestions() {
+  const set = state.role === "librarian" ? PROMPTS.librarian : state.email ? PROMPTS.member : PROMPTS.anonymous;
+  const box = $("suggest"); box.replaceChildren();
+  set.forEach((p) => { const b = el("button", {class: "btn", type: "button"}, p); b.onclick = () => send(p); box.append(b); });
+}
+
+/* ---- dashboard ---- */
+const fmt = (n, d = 0) => (n === null || n === undefined ? "–" : Number(n).toLocaleString(undefined, {maximumFractionDigits: d}));
+function table(cols, rows, empty) {
+  if (!rows.length) return el("p", {class: "note"}, empty);
+  const t = el("table"); const head = el("tr");
+  cols.forEach(([h]) => head.append(el("th", {}, h))); t.append(head);
+  rows.forEach((r) => { const tr = el("tr"); cols.forEach(([, f]) => tr.append(el("td", {}, String(f(r) ?? "–")))); t.append(tr); });
+  return el("div", {class: "scroll"}, t);
+}
+async function loadDashboard() {
+  const v = $("view-dash"); v.replaceChildren(el("p", {class: "note"}, "Loading…"));
+  try {
+    const [d, wl, gaps, fc, circ] = await Promise.all(["dashboard", "waitlists", "catalog_gaps", "forecast", "circulation"]
+      .map((r) => api(`/analytics/${r}?top_n=8`)));
+    if (d.status !== "ok") { v.replaceChildren(el("p", {}, d.message || "Not permitted.")); return; }
+    const k = d.kpis, kp = el("div", {class: "kpis"});
+    [["Loans, last 30 days", fmt(k.loans_last_30_days)], ["Active loans", fmt(k.active_loans)],
+     ["Overdue now", `${fmt(k.overdue_now)} (${fmt(k.overdue_rate * 100)}%)`], ["Fines accruing", `${fmt(k.fines_accruing, 2)} ${k.currency}`],
+     ["Titles with waitlist", fmt(k.titles_with_waitlist)], ["Readers waiting", fmt(k.readers_waiting)],
+     ["Copies in use", fmt(k.copies_in_use_pct, 1) + "%"], ["Search success (90d)", k.search_success_rate_90d == null ? "–" : fmt(k.search_success_rate_90d * 100) + "%"]]
+      .forEach(([l, val]) => kp.append(el("div", {class: "kpi"}, el("b", {}, val), el("span", {}, l))));
+    v.replaceChildren(kp);
+
+    const max = Math.max(1, ...circ.monthly.map((m) => m.loans));
+    const bars = el("div", {class: "bars", role: "img", "aria-label": "Loans per month"}), lab = el("div", {class: "bl"});
+    circ.monthly.forEach((m) => { const b = el("div", {class: "bar", title: `${m.month}: ${m.loans} loans`}, el("span", {}, m.loans));
+      b.style.height = (m.loans / max * 100) + "%"; bars.append(b); lab.append(el("div", {}, m.month.slice(2))); });
+    v.append(el("h2", {}, "Circulation, last 12 months"), bars, lab);
+
+    v.append(el("h2", {}, "Longest waitlists"), table([["Title", (r) => r.title], ["Waiting", (r) => r.waiting], ["Ready for pickup", (r) => r.ready_for_pickup], ["Copies", (r) => r.copies],
+      ["Oldest (days)", (r) => r.oldest_wait_days], ["Signal", (r) => r.action]], wl.rows, "No waitlists right now."));
+    v.append(el("h2", {}, "Searches the catalog could not answer"), table([["Query", (r) => r.query], ["Searches", (r) => r.unanswered_searches],
+      ["Users", (r) => r.distinct_users], ["Last seen", (r) => r.last_seen], ["Signal", (r) => r.action]], gaps.rows, "No repeated unanswered searches."));
+    v.append(el("h2", {}, `Forecast: next ${fc.horizon_days} days`), table([["Title", (r) => r.title], ["Expected demand", (r) => r.expected_demand],
+      ["Capacity", (r) => r.capacity], ["Suggest", (r) => r.suggested_extra_copies ? `+${r.suggested_extra_copies} copy` : "ok"],
+      ["Confidence", (r) => r.confidence]], fc.rows, "No forecast data."));
+    const bt = fc.backtest;
+    v.append(el("p", {class: "note"}, bt.wape == null ? "Not enough history to backtest." :
+      `Backtest error (WAPE) ${bt.wape} vs ${bt.baseline_last_month_wape} for a last-month baseline: treat forecasts as indicative. ` +
+      "Sold-out titles understate true demand; queued readers are added back."));
+  } catch (e) { v.replaceChildren(el("p", {}, "Could not load analytics (" + e.message + ")")); }
+}
+
+/* ---- tabs & persona ---- */
+function showTab(name) {
+  const dash = name === "dash";
+  $("tab-chat").setAttribute("aria-selected", String(!dash)); $("tab-dash").setAttribute("aria-selected", String(dash));
+  $("view-chat").classList.toggle("hidden", dash); $("view-dash").classList.toggle("hidden", !dash);
+  if (dash) loadDashboard(); else $("msg").focus();
+}
+$("tab-chat").onclick = () => showTab("chat");
+$("tab-dash").onclick = () => showTab("dash");
+$("form").onsubmit = (e) => { e.preventDefault(); const t = $("msg").value; $("msg").value = ""; send(t); };
+
+function applyPersona() {
+  const opt = $("persona").selectedOptions[0];
+  state.email = opt.value; state.role = opt.dataset.role || "anonymous"; state.sessionId = null;
+  $("role").textContent = state.role;
+  $("tab-dash").disabled = state.role !== "librarian";
+  $("log").replaceChildren();
+  addBot({answer: state.email ? `Hello ${opt.dataset.name.split(" ")[0]}. Ask me about books, availability, your account, or recommendations.`
+                              : "Hello. You are not signed in, so I can search the catalog but cannot show account data. Try one of the suggestions below.",
+          grounded: true, citations: [], tools: []});
+  renderSuggestions(); showTab("chat");
+}
+
+async function init() {
+  const sel = $("persona");
+  sel.append(Object.assign(el("option", {value: "", "data-role": "anonymous", "data-name": "Guest"}, "Not signed in")));
+  try {
+    (await api("/demo/personas")).forEach((p) => sel.append(el("option", {value: p.email, "data-role": p.role, "data-name": p.name}, `${p.name} (${p.role})`)));
+  } catch (e) { /* personas disabled: anonymous only */ }
+  sel.onchange = applyPersona; applyPersona();
+  try {
+    const h = await api("/health");
+    $("foot").textContent = `LLM: ${h.llm} · Embeddings: ${h.embedder} (${h.retrieval}). Prototype with demo sign-in; production requires SSO.`;
+  } catch (e) { $("foot").textContent = "Backend status unavailable."; }
+}
+init();
+</script>
+</body>
+</html>

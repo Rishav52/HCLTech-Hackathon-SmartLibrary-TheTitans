@@ -1,0 +1,2 @@
+# Optional: local semantic embeddings (downloads all-MiniLM-L6-v2 from huggingface.co on first use)
+sentence-transformers>=3.0
